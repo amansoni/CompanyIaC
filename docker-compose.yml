@@ -1,0 +1,138 @@
+networks:
+  galea_proxy: # Public-facing network for Traefik to connect to services
+    external: false # Docker Compose will create this
+  galea_net: # Internal private network
+    external: false
+
+services:
+  traefik:
+    image: traefik:v2.10 # Use a specific version
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --api.dashboard=true
+      - --api.insecure=true # WARNING: Don't use in production
+      # Optional: enable access logs for Traefik
+      - --accesslog=true
+      - --accesslog.format=json
+      # For HTTPS locally, you'd need self-signed certs config here
+      # For now, we'll focus on HTTP on port 80
+    ports:
+      - "80:80"    # The HTTP port
+      - "443:443"  # The HTTPS port (even if not fully configured yet)
+      - "8080:8080" # The Traefik dashboard port
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # So Traefik can see other containers
+      # - ./traefik/certs:/etc/traefik/certs:ro # For local HTTPS certs if you generate them
+      - ./services/traefik:/etc/traefik:ro # Mount the whole traefik config directory
+    networks:
+      - galea_proxy # Traefik must be on the same network as the services it manages
+
+  # --- Your Frontend Service ---
+  frontend:
+    build: ./services/frontend # Path to your frontend Dockerfile
+    networks:
+      - galea_proxy # Connect to the public network
+      - galea_net   # Connect to the internal network
+    labels:
+      - "traefik.enable=true"
+      # Route galea-care.local to the frontend service
+      - "traefik.http.routers.frontend.rule=Host(`galea-care.local`)"
+      - "traefik.http.routers.frontend.entrypoints=web" # Use HTTP for now
+      # For local dev, Vite typically runs on port 3000
+      - "traefik.http.services.frontend.loadbalancer.server.port=8000"
+      # Optional: Add a middleware to strip a potential /ui prefix if you used one
+      # - "traefik.http.middlewares.frontend-stripprefix.stripprefix.prefixes=/ui"
+      # - "traefik.http.routers.frontend.middlewares=frontend-stripprefix"
+    volumes:
+      - ./services/frontend:/app # Mount for live code changes (dev mode)
+      - /app/node_modules # Avoid overwriting node_modules if building locally
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://api.galea-care.local # Frontend needs to know API URL
+
+  # --- Your Authentication Service (Keycloak/Authentik) ---
+  auth:
+    image: quay.io/keycloak/keycloak:22.0.4 # Or the image for Authentik
+    # Use environment variables for configuration (DB connection, admin user, etc.)
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://keycloak-db:5432/keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=keycloak
+      - KC_HTTP_ENABLED=true
+      - KC_PROXY=edge
+      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_HOSTNAME_STRICT_ORIGIN=false
+      - KC_HOSTNAME_URL=http://auth.galea-care.local
+    command: start-dev # For development mode, not for production
+    networks:
+      - galea_proxy
+      - galea_net
+    labels:
+      - "traefik.enable=true"
+      # Route auth.galea-care.local to the auth service
+      - "traefik.http.routers.auth.rule=Host(`auth.galea-care.local`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080" # Default Keycloak HTTP port
+    # volumes: # Persist Keycloak data
+    #   - keycloak_data:/opt/keycloak/data
+
+  # --- Your API Service ---
+  api:
+    build: ./services/api # Path to your API Dockerfile
+    networks:
+      - galea_proxy
+      - galea_net
+    labels:
+      - "traefik.enable=true"
+      # Route api.galea-care.local to the API service
+      - "traefik.http.routers.api.rule=Host(`api.galea-care.local`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8000" # Or whatever port your API runs on
+    volumes:
+      - ./services/api:/app # Mount for live code changes (dev mode)
+      - /app/node_modules # Avoid overwriting node_modules
+    environment:
+      - NODE_ENV=development
+      - AUTH_SERVER_URL=http://auth.galea-care.local/realms/galea # Example Keycloak realm
+      - PG_HOST=database
+      - PG_PORT=5432
+      - PG_USER=galea_user
+      - PG_PASSWORD=galea_password
+      - PG_DATABASE=galea_db
+
+  # --- Your Database Service ---
+  database:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=galea_db
+      - POSTGRES_USER=galea_user
+      - POSTGRES_PASSWORD=galea_password
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - galea_net # Only accessible internally
+
+  # --- Keycloak's Database (if using Keycloak) ---
+  keycloak-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=keycloak
+      - POSTGRES_PASSWORD=keycloak
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    networks:
+      - galea_net # Only accessible internally
+
+volumes:
+  db_data:
+  keycloak_db_data:
+  # keycloak_data: # If you choose to persist keycloak config separately

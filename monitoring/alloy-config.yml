@@ -1,0 +1,17 @@
+server:
+  http_listen_port: 12345
+
+integrations:
+  docker:
+    enabled: true
+
+receivers:
+  loki:
+    configs:
+      - name: docker-logs
+        positions:
+          filename: /tmp/positions.yaml
+        clients:
+          - url: http://loki:3100/loki/api/v1/push
+        targets:
+          - /var/lib/docker/containers/*/*.log

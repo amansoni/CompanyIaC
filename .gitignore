@@ -1,0 +1,43 @@
+# Node
+node_modules/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Docker
+*.pid
+*.pid.lock
+
+# Vite/React
+frontend/dist/
+frontend/.vite/
+
+# VSCode
+.vscode/
+
+# Traefik
+traefik/certs/
+
+# Database
+services/**/db_data/
+keycloak_db_data/
+db_data/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Keycloak
+keycloak_data/
+
+# Build
+build/
+
+# Misc
+*.swp
+*.swo
