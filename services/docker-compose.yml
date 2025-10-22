@@ -12,7 +12,7 @@ services:
       - traefik.http.routers.frontend.entrypoints=web
       - traefik.http.services.frontend.loadbalancer.server.port=8000
     volumes:
-      - ../frontend:/app
+      - ./frontend:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development
@@ -29,7 +29,7 @@ services:
       - traefik.http.routers.api.entrypoints=web
       - traefik.http.services.api.loadbalancer.server.port=8000
     volumes:
-      - ../api:/app
+      - ./api:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development

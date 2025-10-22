@@ -1,8 +1,8 @@
 networks:
   galea_proxy: # Public-facing network for Traefik to connect to services
-    external: false # Docker Compose will create this
+    external: true # Docker Compose will create this
   galea_net: # Internal private network
-    external: false
+    external: true
 
 services:
   traefik:
@@ -87,48 +87,8 @@ services:
     networks:
       - galea_net # Only accessible internally
 
-  # --- Monitoring & Logging ---
-  loki:
-    image: grafana/loki:2.9.2
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml:ro
-    networks:
-      - galea_net
-      - galea_proxy
-
-  alloy:
-    image: grafana/alloy:latest
-    command: --config.file=/etc/alloy/alloy-config.yml
-    volumes:
-      - ./monitoring/alloy-config.yml:/etc/alloy/alloy-config.yml:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - galea_net
-      - galea_proxy
-
-  grafana:
-    image: grafana/grafana:10.2.2
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.grafana.rule=Host(`logs.dev.local`)
-      - traefik.http.routers.grafana.entrypoints=web
-      - traefik.http.services.grafana.loadbalancer.server.port=3000
-    networks:
-      - galea_net
-      - galea_proxy
-
 volumes:
   db_data:
   keycloak_db_data:
-  grafana_data:
+  # grafana_data:
   # keycloak_data: # If you choose to persist keycloak config separately
