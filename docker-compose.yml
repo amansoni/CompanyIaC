@@ -6,7 +6,7 @@ networks:
 
 services:
   traefik:
-    image: traefik:v2.10 # Use a specific version
+    image: traefik:v3.0 # Upgraded to Traefik v3
     command:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
@@ -26,32 +26,10 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # So Traefik can see other containers
       # - ./traefik/certs:/etc/traefik/certs:ro # For local HTTPS certs if you generate them
-      - ./services/traefik:/etc/traefik:ro # Mount the whole traefik config directory
+      - ./traefik:/etc/traefik:ro # Mount the whole traefik config directory
     networks:
       - galea_proxy # Traefik must be on the same network as the services it manages
-
-  # --- Your Frontend Service ---
-  frontend:
-    build: ./services/frontend # Path to your frontend Dockerfile
-    networks:
-      - galea_proxy # Connect to the public network
-      - galea_net   # Connect to the internal network
-    labels:
-      - "traefik.enable=true"
-      # Route galea-care.local to the frontend service
-      - "traefik.http.routers.frontend.rule=Host(`galea-care.local`)"
-      - "traefik.http.routers.frontend.entrypoints=web" # Use HTTP for now
-      # For local dev, Vite typically runs on port 3000
-      - "traefik.http.services.frontend.loadbalancer.server.port=8000"
-      # Optional: Add a middleware to strip a potential /ui prefix if you used one
-      # - "traefik.http.middlewares.frontend-stripprefix.stripprefix.prefixes=/ui"
-      # - "traefik.http.routers.frontend.middlewares=frontend-stripprefix"
-    volumes:
-      - ./services/frontend:/app # Mount for live code changes (dev mode)
-      - /app/node_modules # Avoid overwriting node_modules if building locally
-    environment:
-      - NODE_ENV=development
-      - VITE_API_BASE_URL=http://api.galea-care.local # Frontend needs to know API URL
+      - galea_net   # Also attach to internal network for routing to all services
 
   # --- Your Authentication Service (Keycloak/Authentik) ---
   auth:
@@ -68,43 +46,20 @@ services:
       - KC_PROXY=edge
       - KC_HOSTNAME_STRICT_HTTPS=false
       - KC_HOSTNAME_STRICT_ORIGIN=false
-      - KC_HOSTNAME_URL=http://auth.galea-care.local
+      - KC_HOSTNAME_URL=http://auth.dev.local
     command: start-dev # For development mode, not for production
     networks:
       - galea_proxy
       - galea_net
     labels:
       - "traefik.enable=true"
-      # Route auth.galea-care.local to the auth service
-      - "traefik.http.routers.auth.rule=Host(`auth.galea-care.local`)"
+      # Route auth.dev.local to the auth service
+      - "traefik.http.routers.auth.rule=Host(`auth.dev.local`)"
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=8080" # Default Keycloak HTTP port
+      - "traefik.docker.network=galea_net"
     # volumes: # Persist Keycloak data
     #   - keycloak_data:/opt/keycloak/data
-
-  # --- Your API Service ---
-  api:
-    build: ./services/api # Path to your API Dockerfile
-    networks:
-      - galea_proxy
-      - galea_net
-    labels:
-      - "traefik.enable=true"
-      # Route api.galea-care.local to the API service
-      - "traefik.http.routers.api.rule=Host(`api.galea-care.local`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.services.api.loadbalancer.server.port=8000" # Or whatever port your API runs on
-    volumes:
-      - ./services/api:/app # Mount for live code changes (dev mode)
-      - /app/node_modules # Avoid overwriting node_modules
-    environment:
-      - NODE_ENV=development
-      - AUTH_SERVER_URL=http://auth.galea-care.local/realms/galea # Example Keycloak realm
-      - PG_HOST=database
-      - PG_PORT=5432
-      - PG_USER=galea_user
-      - PG_PASSWORD=galea_password
-      - PG_DATABASE=galea_db
 
   # --- Your Database Service ---
   database:
@@ -132,7 +87,48 @@ services:
     networks:
       - galea_net # Only accessible internally
 
+  # --- Monitoring & Logging ---
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml:ro
+    networks:
+      - galea_net
+      - galea_proxy
+
+  alloy:
+    image: grafana/alloy:latest
+    command: --config.file=/etc/alloy/alloy-config.yml
+    volumes:
+      - ./monitoring/alloy-config.yml:/etc/alloy/alloy-config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - galea_net
+      - galea_proxy
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.rule=Host(`logs.dev.local`)
+      - traefik.http.routers.grafana.entrypoints=web
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+    networks:
+      - galea_net
+      - galea_proxy
+
 volumes:
   db_data:
   keycloak_db_data:
+  grafana_data:
   # keycloak_data: # If you choose to persist keycloak config separately

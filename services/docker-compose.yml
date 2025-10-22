@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  frontend:
+    build: ./frontend
+    networks:
+      - galea_proxy
+      - galea_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`dev.local`)
+      - traefik.http.routers.frontend.entrypoints=web
+      - traefik.http.services.frontend.loadbalancer.server.port=8000
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://api.dev.local
+
+  api:
+    build: ./api
+    networks:
+      - galea_proxy
+      - galea_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`api.dev.local`)
+      - traefik.http.routers.api.entrypoints=web
+      - traefik.http.services.api.loadbalancer.server.port=8000
+    volumes:
+      - ../api:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - AUTH_SERVER_URL=http://auth.dev.local/realms/galea
+      - PG_HOST=database
+      - PG_PORT=5432
+      - PG_USER=galea_user
+      - PG_PASSWORD=galea_password
+      - PG_DATABASE=galea_db
+
+networks:
+  galea_proxy:
+    external: true
+  galea_net:
+    external: true

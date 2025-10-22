@@ -1,4 +1,4 @@
-# traefik/traefik.yml
+## Traefik v3 configuration (compatible with v2 syntax, review docs for breaking changes)
 global:
   checkNewVersion: false
   sendAnonymousUsage: false
