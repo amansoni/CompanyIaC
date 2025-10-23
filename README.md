@@ -206,3 +206,19 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Contact
 For questions or support, contact your-org@example.com.
+
+## Traefik HTTPS & Dashboard Setup
+
+- Traefik now uses static self-signed TLS certificates for HTTPS. Configure in `traefik/traefik.yml`:
+  ```yaml
+  tls:
+    certificates:
+      - certFile: "/etc/traefik/certs/local-cert.pem"
+        keyFile: "/etc/traefik/certs/local-key.pem"
+  ```
+- Dashboard is exposed at `https://proxy.dev.local/dashboard/` via router labels in the traefik service in `docker-compose.yml`.
+- If you see TLS errors, ensure the certs are referenced and mounted correctly, and your browser trusts `local-cert.pem`.
+- After changes, restart Traefik:
+  ```bash
+  docker compose up -d --build traefik
+  ```
