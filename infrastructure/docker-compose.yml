@@ -1,0 +1,86 @@
+networks:
+  proxy-net: # Public-facing network for Traefik to connect to services
+    external: true # Docker Compose will create this
+  internal-net: # Internal private network
+    external: true
+
+volumes:
+  keycloak_db_data:
+
+services:
+  reverse-proxy:
+    image: traefik:v3.0 # Upgraded to Traefik v3
+    # Optional: enable access logs for Traefik
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--api.dashboard=true"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+    # Optional: enable access logs for Traefik
+    # For HTTPS locally, you'd need self-signed certs config here
+    # For now, we'll focus on HTTP on port 80
+    ports:
+      - "80:80"    # The HTTP port
+      - "443:443"  # The HTTPS port (even if not fully configured yet)
+      - "8080:8080" # The Traefik dashboard port
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # So Traefik can see other containers
+      # - ./traefik/certs:/etc/traefik/certs:ro # For local HTTPS certs if you generate them
+      - ./traefik:/etc/traefik:ro # Mount the whole traefik config directory
+    networks:
+      - proxy-net # Traefik must be on the same network as the services it manages
+      - internal-net   # Also attach to internal network for routing to all services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+  # --- Your Authentication Service (Keycloak/Authentik) ---
+  auth:
+    image: quay.io/keycloak/keycloak:22.0.4 # Or the image for Authentik
+    # Use environment variables for configuration (DB connection, admin user, etc.)
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KC_DB=${KC_DB}
+      - KC_DB_URL=${KC_DB_URL}
+      - KC_DB_USERNAME=${KC_DB_USERNAME}
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+      - KC_HTTP_ENABLED=${KC_HTTP_ENABLED}
+      - KC_PROXY=${KC_PROXY}
+      - KC_HOSTNAME_STRICT_HTTPS=${KC_HOSTNAME_STRICT_HTTPS}
+      - KC_HOSTNAME_STRICT_ORIGIN=${KC_HOSTNAME_STRICT_ORIGIN}
+      - KC_HOSTNAME_URL=${KC_HOSTNAME_URL}
+    command: start-dev # For development mode, not for production
+    networks:
+      - proxy-net
+      - internal-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`${AUTH_HOST}`)"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080"
+      - "traefik.docker.network=galea_net"
+    depends_on:
+      - keycloak-db
+    # volumes: # Persist Keycloak data
+    #   - keycloak_data:/opt/keycloak/data
+
+  # --- Keycloak's Database Service ---
+  keycloak-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    networks:
+      - internal-net # Only accessible internally
+

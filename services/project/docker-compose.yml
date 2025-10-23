@@ -1,0 +1,28 @@
+networks:
+  proxy-net: # Public-facing network for Traefik to connect to services
+    external: true # Docker Compose will create this
+  internal-net: # Internal private network
+    external: true
+
+services:
+  openproject:
+    image: openproject/community:13
+    container_name: galea-care-openproject-1
+    environment:
+      - OPENPROJECT_SECRET_KEY_BASE=changeme
+      - OPENPROJECT_ADMIN_EMAIL=admin@project.dev.local
+      - OPENPROJECT_ADMIN_PASSWORD=admin
+      - OPENPROJECT_HTTPS=false
+    ports:
+      - "8081:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openproject.rule=Host(`project.dev.local`)"
+      - "traefik.http.routers.openproject.entrypoints=web"
+      - "traefik.http.services.openproject.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy-net"
+    networks:
+      - proxy-net
+      - internal-net
+    restart: unless-stopped
+

@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  # Core infrastructure
+  db:
+    extends:
+      file: ./core-infra/docker-compose.yaml
+      service: db
+  proxy:
+    extends:
+      file: ./core-infra/docker-compose.yaml
+      service: proxy
+  # Services
+  erpnext:
+    extends:
+      file: ./services/erpnext/docker-compose.yaml
+      service: erpnext
+  nextcloud:
+    extends:
+      file: ./services/nextcloud/docker-compose.yaml
+      service: nextcloud
+  openproject:
+    extends:
+      file: ./services/openproject/docker-compose.yaml
+      service: openproject
+  # Products
+  egrist:
+    extends:
+      file: ./products/egrist/docker-compose.yaml
+      service: egrist
+  galea:
+    extends:
+      file: ./products/galea/docker-compose.yaml
+      service: galea
+networks:
+  proxy-net:
+    external: true

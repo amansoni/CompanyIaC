@@ -1,0 +1,60 @@
+networks:
+  proxy-net: # Public-facing network for Traefik to connect to services
+    external: true # Docker Compose will create this
+  internal-net: # Internal private network
+    external: true
+
+volumes:
+  nextcloud_data:
+  nextcloud_config:
+  nextcloud_db_data:
+
+services:
+  nextcloud:
+    image: nextcloud:latest
+    container_name: nextcloud
+    networks:
+      - default
+      - proxy-net
+    volumes:
+      - nextcloud_data:/var/www/html
+      - nextcloud_config:/usr/local/etc/php/conf.d
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_TRUSTED_DOMAINS}
+    depends_on:
+      - nextcloud_db
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nextcloud.entrypoints=websecure
+      - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_HOST}`)
+      - traefik.http.routers.nextcloud.tls=true
+      - traefik.http.routers.nextcloud.tls.certresolver=main-resolver
+      - traefik.http.services.nextcloud.loadbalancer.server.port=80
+      - traefik.http.middlewares.nextcloud-headers.headers.customFrameOptionsValue=SAMEORIGIN
+      - traefik.http.middlewares.nextcloud-headers.headers.contentSecurityPolicy=frame-ancestors 'self'
+      - traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=15552000
+      - traefik.http.middlewares.nextcloud-headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.nextcloud-headers.headers.stsPreload=true
+      - traefik.http.middlewares.nextcloud-headers.headers.referrerPolicy=no-referrer
+      - traefik.http.middlewares.nextcloud-headers.headers.featurePolicy="vibrate 'none';"
+      - traefik.http.routers.nextcloud.middlewares=nextcloud-headers@docker
+  nextcloud_db:
+    image: postgres:15
+    container_name: nextcloud_db
+    networks:
+      - default
+    volumes:
+      - nextcloud_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    restart: unless-stopped
+
