@@ -4,12 +4,12 @@ global:
   sendAnonymousUsage: false
 
 log:
-  level: INFO # Set to info for standard logging
+  level: DEBUG # Increased log level for more verbose logging
   format: common
 
 api:
   dashboard: true
-  insecure: false
+  insecure: true
 
 entryPoints:
   web:
