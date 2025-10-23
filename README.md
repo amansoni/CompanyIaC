@@ -126,6 +126,53 @@ receivers:
    - Keycloak/Authenik: https://localhost/auth/
    - API: https://localhost/api/
 
+## Local Development Setup (2025)
+
+- **Frontend:** Runs on Vite dev server (port 8000), routed via Traefik at http://app.dev.local/
+- **API:** FastAPI backend, routed at http://api.dev.local/
+- **Auth:** Keycloak at http://auth.dev.local/
+- **Monitoring:** Grafana at http://logs.dev.local/
+- **Networks:** Uses external Docker networks (`galea_proxy`, `galea_net`) for service discovery
+- **Volumes:** Frontend uses a named volume for `node_modules` to avoid overwriting dependencies when mounting source code
+
+### Quick Start (Dev)
+1. Create external Docker networks (if not present):
+   ```bash
+   docker network create galea_proxy
+   docker network create galea_net
+   ```
+2. Build and start services:
+   - Main stack (API, frontend, auth, traefik):
+     ```bash
+     docker compose -f services/docker-compose.yml up -d --build
+     ```
+   - Monitoring stack (Grafana, Loki, Alloy):
+     ```bash
+     docker compose -f monitoring/docker-compose.yml up -d --build
+     ```
+3. Access services:
+   - Frontend: http://app.dev.local/
+   - API: http://api.dev.local/
+   - Auth: http://auth.dev.local/
+   - Grafana: http://logs.dev.local/
+
+#### Compose File Overview
+- `services/docker-compose.yml`: Main application stack (frontend, API, auth, traefik)
+- `monitoring/docker-compose.yml`: Monitoring stack (Grafana, Loki, Alloy)
+- `monitoring/alloy-config.yml`: Alloy log collector config
+- `traefik/traekif.yml`: Traefik static/dynamic config
+
+### Frontend Dev Notes
+- Vite dev server runs in Docker, exposed on port 8000
+- Traefik routes requests to frontend at `app.dev.local`
+- Source code is bind-mounted, but `node_modules` uses a named volume (`frontend_node_modules`) to persist dependencies
+- If you see `Vite: not found` or missing dependencies, check the volume configuration in `docker-compose.yml`
+- For 403 errors on frontend, ensure Vite config allows external access (see `vite.config.js` for `host`, `cors`, and `hmr` settings)
+
+### Monitoring Stack
+- Alloy collects Docker logs and pushes to Loki
+- Grafana visualizes logs and metrics
+
 ## Database Schema
 - **Organizations:** `id`, `name`, `domain`, `settings`
 - **Users:** `id`, `auth_id`, `organization_id`, `role`, `status`, `created_at`

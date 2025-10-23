@@ -1,24 +1,18 @@
-networks:
-  galea_proxy: # Public-facing network for Traefik to connect to services
-    external: true # Docker Compose will create this
-  galea_net: # Internal private network
-    external: true
-
 services:
   traefik:
     image: traefik:v3.0 # Upgraded to Traefik v3
+    # Optional: enable access logs for Traefik
     command:
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --api.dashboard=true
-      - --api.insecure=true # WARNING: Don't use in production
-      # Optional: enable access logs for Traefik
-      - --accesslog=true
-      - --accesslog.format=json
-      # For HTTPS locally, you'd need self-signed certs config here
-      # For now, we'll focus on HTTP on port 80
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--api.dashboard=true"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+    # Optional: enable access logs for Traefik
+    # For HTTPS locally, you'd need self-signed certs config here
+    # For now, we'll focus on HTTP on port 80
     ports:
       - "80:80"    # The HTTP port
       - "443:443"  # The HTTPS port (even if not fully configured yet)
@@ -30,7 +24,12 @@ services:
     networks:
       - galea_proxy # Traefik must be on the same network as the services it manages
       - galea_net   # Also attach to internal network for routing to all services
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`proxy.dev.local`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
   # --- Your Authentication Service (Keycloak/Authentik) ---
   auth:
     image: quay.io/keycloak/keycloak:22.0.4 # Or the image for Authentik
@@ -53,10 +52,9 @@ services:
       - galea_net
     labels:
       - "traefik.enable=true"
-      # Route auth.dev.local to the auth service
       - "traefik.http.routers.auth.rule=Host(`auth.dev.local`)"
-      - "traefik.http.routers.auth.entrypoints=web"
-      - "traefik.http.services.auth.loadbalancer.server.port=8080" # Default Keycloak HTTP port
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080"
       - "traefik.docker.network=galea_net"
     # volumes: # Persist Keycloak data
     #   - keycloak_data:/opt/keycloak/data
@@ -86,9 +84,109 @@ services:
       - keycloak_db_data:/var/lib/postgresql/data
     networks:
       - galea_net # Only accessible internally
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=traefik"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`proxy.dev.local`) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
 
+  openproject:
+    image: openproject/community:13
+    container_name: galea-care-openproject-1
+    environment:
+      - OPENPROJECT_SECRET_KEY_BASE=changeme
+      - OPENPROJECT_ADMIN_EMAIL=admin@project.dev.local
+      - OPENPROJECT_ADMIN_PASSWORD=admin
+      - OPENPROJECT_HTTPS=false
+    ports:
+      - "8081:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openproject.rule=Host(`project.dev.local`)"
+      - "traefik.http.routers.openproject.entrypoints=websecure"
+      - "traefik.http.services.openproject.loadbalancer.server.port=8080"
+      - "traefik.docker.network=galea_proxy"
+    networks:
+      - galea_proxy
+      - galea_net
+    restart: unless-stopped
+
+# Nextcloud service
+  nextcloud:
+    image: nextcloud:latest
+    container_name: nextcloud
+    networks:
+      - galea_proxy
+      - galea_net
+    volumes:
+      - nextcloud_data:/var/www/html
+      - nextcloud_config:/usr/local/etc/php/conf.d
+    environment:
+      - POSTGRES_HOST=nextcloud_db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=XZRgpMsVi1dHo49
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=XZRgpMsVi1dHo49
+      - NEXTCLOUD_TRUSTED_DOMAINS=docs.dev.local
+    depends_on:
+      - nextcloud_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.rule=Host(`docs.dev.local`)"
+      - "traefik.http.routers.nextcloud.tls=true"
+      - traefik.http.services.nextcloud.loadbalancer.server.port=80
+
+# Nextcloud DB service
+  nextcloud_db:
+    image: postgres:15
+    container_name: nextcloud_db
+    networks:
+      - default
+    volumes:
+      - nextcloud_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=XZRgpMsVi1dHo49
+    restart: unless-stopped
+
+# n8n service
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      - GENERIC_TIMEZONE=Europe/London
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=n8nadmin
+      - N8N_BASIC_AUTH_PASSWORD=M3ntalHealth
+      - N8N_HOST=n8n.dev.local
+      - N8N_PORT=5678
+      - WEBHOOK_TUNNEL_URL=https://n8n.dev.local
+    ports:
+      - "5678:5678"
+    networks:
+      - galea_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.dev.local`)"
+      - "traefik.http.routers.n8n.tls=true"
+      - traefik.http.services.n8n.loadbalancer.server.port=5678
+    volumes:
+      - n8n_data:/home/node/.n8n
 volumes:
   db_data:
   keycloak_db_data:
-  # grafana_data:
-  # keycloak_data: # If you choose to persist keycloak config separately
+  nextcloud_data:
+  nextcloud_config:
+  nextcloud_db_data:
+  n8n_data:
+networks:
+  galea_proxy: # Public-facing network for Traefik to connect to services
+    external: true # Docker Compose will create this
+  galea_net: # Internal private network
+    external: true

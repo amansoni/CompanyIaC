@@ -1,0 +1,29 @@
+## Traefik v3 configuration (compatible with v2 syntax, review docs for breaking changes)
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: INFO # Set to info for standard logging
+  format: common
+
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+  traefik:
+    address: ":8080"
+
+
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+
+  # tls certificates removed
+
