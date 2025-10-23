@@ -54,6 +54,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=Host(`auth.dev.local`)"
       - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=8080"
       - "traefik.docker.network=galea_net"
     depends_on:
@@ -86,7 +87,6 @@ services:
       - keycloak_db_data:/var/lib/postgresql/data
     networks:
       - galea_net # Only accessible internally
-    # No Traefik labels needed for keycloak-db; it's an internal-only service
 
   openproject:
     image: openproject/community:13
