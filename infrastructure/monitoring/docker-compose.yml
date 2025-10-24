@@ -1,6 +1,30 @@
-version: '3.9'
+volumes:
+  grafana_data:
+  kuma-data:
+
+networks:
+  proxy-net:
+    external: true
+  internal-net:
+    external: true
 
 services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - kuma-data:/app/data
+    networks:
+      - proxy-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kuma.rule=Host(`monitor.dev.local`)"
+      - "traefik.http.routers.kuma.entrypoints=web,websecure"
+      - "traefik.http.routers.kuma.tls=true"
+      - "traefik.http.services.kuma.loadbalancer.server.port=3001"
+      - "traefik.docker.network=proxy-net"
+
   loki:
     image: grafana/loki:2.9.2
     ports:
@@ -9,8 +33,8 @@ services:
     volumes:
       - ./config/loki-config.yaml:/etc/loki/local-config.yaml:ro
     networks:
-      - galea_net
-      - galea_proxy
+      - internal-net
+      - proxy-net
 
   alloy:
     image: grafana/alloy:latest
@@ -20,8 +44,8 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - galea_net
-      - galea_proxy
+      - internal-net
+      - proxy-net
 
   grafana:
     image: grafana/grafana:10.2.2
@@ -37,14 +61,7 @@ services:
       - traefik.http.routers.grafana.entrypoints=web
       - traefik.http.services.grafana.loadbalancer.server.port=3000
     networks:
-      - galea_net
-      - galea_proxy
+      - internal-net
+      - proxy-net
 
-volumes:
-  grafana_data:
 
-networks:
-  galea_proxy:
-    external: true
-  galea_net:
-    external: true

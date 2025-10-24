@@ -42,12 +42,13 @@ services:
       - matomo:/var/www/html:z,ro
       # see https://github.com/matomo-org/matomo-nginx
       - ./matomo.conf:/etc/nginx/conf.d/default.conf:z,ro
-    ports:
-      - 8080:80
+    # ports:
+    #   - 8080:80
     labels:
       - traefik.enable=true
-      - traefik.http.routers.analytics.rule=Host(${ANALYTICS_HOST})
-      - traefik.http.routers.analytics.entrypoints=web
+      - traefik.http.routers.analytics.rule=Host(`${ANALYTICS_HOST}`)
+      - traefik.http.routers.analytics.entrypoints=web,websecure
+      - traefik.http.services.analytics.loadbalancer.server.port=80
 
 volumes:
   db:
