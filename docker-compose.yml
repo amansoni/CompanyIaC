@@ -3,33 +3,33 @@ services:
   # Core infrastructure
   db:
     extends:
-      file: ./core-infra/docker-compose.yaml
+      file: ./core-infra/docker-compose.yml
       service: db
   proxy:
     extends:
-      file: ./core-infra/docker-compose.yaml
+      file: ./core-infra/docker-compose.yml
       service: proxy
   # Services
   erpnext:
     extends:
-      file: ./services/erpnext/docker-compose.yaml
+      file: ./services/erpnext/docker-compose.yml
       service: erpnext
   nextcloud:
     extends:
-      file: ./services/nextcloud/docker-compose.yaml
+      file: ./services/nextcloud/docker-compose.yml
       service: nextcloud
   openproject:
     extends:
-      file: ./services/openproject/docker-compose.yaml
+      file: ./services/openproject/docker-compose.yml
       service: openproject
   # Products
   egrist:
     extends:
-      file: ./products/egrist/docker-compose.yaml
+      file: ./products/egrist/docker-compose.yml
       service: egrist
   galea:
     extends:
-      file: ./products/galea/docker-compose.yaml
+      file: ./products/galea/docker-compose.yml
       service: galea
 networks:
   proxy-net:

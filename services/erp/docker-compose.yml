@@ -16,7 +16,7 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     networks:
       default: null
     platform: linux/amd64
@@ -46,7 +46,7 @@ services:
       REDIS_CACHE: ${REDIS_CACHE}
       REDIS_QUEUE: ${REDIS_QUEUE}
       SOCKETIO_PORT: ${SOCKETIO_PORT}
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     networks:
       default: null
     platform: linux/amd64
@@ -95,7 +95,7 @@ services:
       UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS}
       UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER}
       UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE}
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     labels:
       traefik.enable: "true"
       traefik.http.routers.frontend-http.entrypoints: websecure
@@ -120,7 +120,7 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     networks:
       default: null
     platform: linux/amd64
@@ -139,7 +139,7 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     networks:
       default: null
     platform: linux/amd64
@@ -169,7 +169,7 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     networks:
       default: null
     platform: linux/amd64
@@ -186,7 +186,7 @@ services:
     depends_on:
       configurator:
         condition: service_completed_successfully
-    image: amansoni75/erpnext-health:15.0.1
+    image: frappe/erpnext:v15.84.0
     networks:
       default: null
     platform: linux/amd64
@@ -201,12 +201,12 @@ x-backend-defaults:
   depends_on:
     configurator:
       condition: service_completed_successfully
-  image: amansoni75/erpnext-health:15.0.2
+  image: frappe/erpnext:v15.84.0
   pull_policy: always
   volumes:
   - sites:/home/frappe/frappe-bench/sites
 x-customizable-image:
-  image: amansoni75/erpnext-health:15.0.2
+  image: frappe/erpnext:v15.84.0
   pull_policy: always
 x-depends-on-configurator:
   depends_on:
