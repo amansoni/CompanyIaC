@@ -30,19 +30,22 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # So Traefik can see other containers
       # - ./traefik/certs:/etc/traefik/certs:ro # For local HTTPS certs if you generate them
-      - ./traefik:/etc/traefik:ro # Mount the whole traefik config directory
+      # - ./traefik:/etc/traefik:ro # Mount the whole traefik config directory
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik/certs/acme.json:/letsencrypt/acme.json
     networks:
       - proxy-net # Traefik must be on the same network as the services it manages
-      # - internal-net   # Also attach to internal network for routing to all services
+      - internal-net   # Attach to internal network for routing to all services
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.docker.network=proxy-net"
+        # Restrict dashboard access in production (see Traefik docs for auth middleware)
     environment:
-      - TRAEFIK_DASHBOARD_HOST=proxy.dev.local
+      - TRAEFIK_DASHBOARD_HOST=traefik.sublimecyb.org
 
   # --- Keycloak Authentication Service ---
   auth:
@@ -68,8 +71,8 @@ services:
       - "traefik.http.routers.auth.rule=Host(`${AUTH_HOST}`)"
       - "traefik.http.routers.auth.entrypoints=websecure"
       - "traefik.http.routers.auth.tls=true"
-      - "traefik.http.services.auth.loadbalancer.server.port=8080"
-      - "traefik.docker.network=proxy-net"
+      - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080" # Set to actual Keycloak port if different
       # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
       # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Port=443"
       # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Host=auth.dev.local"
