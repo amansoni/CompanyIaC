@@ -128,10 +128,10 @@ receivers:
 
 ## Local Development Setup (2025)
 
-- **Frontend:** Runs on Vite dev server (port 8000), routed via Traefik at http://app.dev.local/
-- **API:** FastAPI backend, routed at http://api.dev.local/
-- **Auth:** Keycloak at http://auth.dev.local/
-- **Monitoring:** Grafana at http://logs.dev.local/
+- **Frontend:** Runs on Vite dev server (port 8000), routed via Traefik at http://app.sublimecyb.org/
+- **API:** FastAPI backend, routed at http://api.sublimecyb.org/
+- **Auth:** Keycloak at http://auth.sublimecyb.org/
+- **Monitoring:** Grafana at http://logs.sublimecyb.org/
 - **Networks:** Uses external Docker networks (`proxy-net`, `internal-net`) for service discovery
 - **Volumes:** Frontend uses a named volume for `node_modules` to avoid overwriting dependencies when mounting source code
 
@@ -151,10 +151,10 @@ receivers:
      docker compose -f monitoring/docker-compose.yml up -d --build
      ```
 3. Access services:
-   - Frontend: http://app.dev.local/
-   - API: http://api.dev.local/
-   - Auth: http://auth.dev.local/
-   - Grafana: http://logs.dev.local/
+   - Frontend: http://app.sublimecyb.org/
+   - API: http://api.sublimecyb.org/
+   - Auth: http://auth.sublimecyb.org/
+   - Grafana: http://logs.sublimecyb.org/
 
 #### Compose File Overview
 - `services/docker-compose.yml`: Main application stack (frontend, API, auth, traefik)
@@ -164,7 +164,7 @@ receivers:
 
 ### Frontend Dev Notes
 - Vite dev server runs in Docker, exposed on port 8000
-- Traefik routes requests to frontend at `app.dev.local`
+- Traefik routes requests to frontend at `app.sublimecyb.org`
 - Source code is bind-mounted, but `node_modules` uses a named volume (`frontend_node_modules`) to persist dependencies
 - If you see `Vite: not found` or missing dependencies, check the volume configuration in `docker-compose.yml`
 - For 403 errors on frontend, ensure Vite config allows external access (see `vite.config.js` for `host`, `cors`, and `hmr` settings)
@@ -216,7 +216,7 @@ For questions or support, contact your-org@example.com.
       - certFile: "/etc/traefik/certs/local-cert.pem"
         keyFile: "/etc/traefik/certs/local-key.pem"
   ```
-- Dashboard is exposed at `https://proxy.dev.local/dashboard/` via router labels in the traefik service in `docker-compose.yml`.
+- Dashboard is exposed at `https://proxy.sublimecyb.org/dashboard/` via router labels in the traefik service in `docker-compose.yml`.
 - If you see TLS errors, ensure the certs are referenced and mounted correctly, and your browser trusts `local-cert.pem`.
 - After changes, restart Traefik:
   ```bash

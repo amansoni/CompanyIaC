@@ -11,6 +11,8 @@ volumes:
 
 services:
   db:
+    env_file:
+      - .env
     image: mariadb:lts
     command: --max-allowed-packet=64MB
     restart: always
@@ -28,6 +30,8 @@ services:
       - MARIADB_USER=${MARIADB_USER}
 
   app:
+    env_file:
+      - .env
     image: matomo:fpm-alpine
     restart: always
     networks:
@@ -49,6 +53,8 @@ services:
 
   web:
     image: nginx:alpine-slim
+    env_file:
+      - .env
     restart: always
     networks:
       - default

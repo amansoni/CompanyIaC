@@ -14,12 +14,12 @@ services:
     container_name: openproject
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://openproject:changeme@db/openproject
+      - DATABASE_URL=postgresql://openproject:nths-theti-nhw2-876d@db/openproject
       - SECRET_KEY_BASE=supersecretkey
-      - SERVER_HOSTNAME=project.dev.local
+      - SERVER_HOSTNAME=project.sublimecyb.org
       - OPENPROJECT_HTTPS=true
       - OPENPROJECT_EXPERIMENTAL=true
-      - OPENPROJECT_HOST__NAME=project.dev.local
+      - OPENPROJECT_HOST__NAME=project.sublimecyb.org
     depends_on:
       - db
     volumes:
@@ -29,15 +29,16 @@ services:
       - openproject-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.openproject.rule=Host(`project.dev.local`)"
+      - "traefik.http.routers.openproject.rule=Host(`project.sublimecyb.org`)"
       - "traefik.http.routers.openproject.entrypoints=websecure"
       - "traefik.http.routers.openproject.tls=true"
+      - "traefik.http.routers.openproject.tls.certresolver=letsencrypt"
       - "traefik.http.services.openproject.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy-net"
       # # Optional security headers
       # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
       # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Port=443"
-      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Host=project.dev.local"
+      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Host=project.sublimecyb.org"
       # - "traefik.http.routers.openproject.middlewares=openproject-headers@docker"
 
   db:
@@ -46,7 +47,7 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=openproject
-      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_PASSWORD=nths-theti-nhw2-876d
       - POSTGRES_DB=openproject
     volumes:
       - pg_data:/var/lib/postgresql/data

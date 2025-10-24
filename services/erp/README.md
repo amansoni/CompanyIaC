@@ -35,7 +35,7 @@ This service runs [ERPNext](https://erpnext.com/) as part of the Galea Care stac
 
 4. **Create Site in Bench**
     ```sh
-    docker compose exec backend bench new-site erp.dev.local \
+    docker compose exec backend bench new-site erp.sublimecyb.org \
   --mariadb-root-password changeit \
   --admin-password admin123 \
   --install-app erpnext

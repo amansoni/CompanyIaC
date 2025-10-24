@@ -10,6 +10,8 @@ volumes:
 
 services:
   reverse-proxy:
+    env_file:
+      - .env
     image: traefik:v3.5 # Upgraded to Traefik v3
     # Optional: enable access logs for Traefik
     command:
@@ -44,12 +46,19 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
         # Restrict dashboard access in production (see Traefik docs for auth middleware)
+      # Global HTTP to HTTPS redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{any:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"        
     environment:
       - TRAEFIK_DASHBOARD_HOST=traefik.sublimecyb.org
 
   # --- Keycloak Authentication Service ---
   auth:
-    image: quay.io/keycloak/keycloak:22.0.4 
+    image: quay.io/keycloak/keycloak:22.0.4
+    env_file:
+      - .env
     environment:
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
@@ -75,7 +84,7 @@ services:
       - "traefik.http.services.auth.loadbalancer.server.port=8080" # Set to actual Keycloak port if different
       # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
       # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Port=443"
-      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Host=auth.dev.local"
+      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Host=auth.sublimecyb.org"
       # - "traefik.http.routers.keycloak.middlewares=keycloak-headers@docker"
     depends_on:
       - keycloak-db
@@ -84,6 +93,8 @@ services:
 
   # --- Keycloak's Database Service ---
   keycloak-db:
+    env_file:
+      - .env
     image: postgres:15-alpine
     restart: unless-stopped
     environment:

@@ -14,6 +14,8 @@ networks:
 
 services:
   postiz:
+    env_file:
+      - .env
     image: ghcr.io/gitroomhq/postiz-app:latest
     container_name: postiz
     restart: always
@@ -87,7 +89,6 @@ services:
       STRIPE_SIGNING_KEY: ${STRIPE_SIGNING_KEY}
       STRIPE_SIGNING_KEY_CONNECT: ${STRIPE_SIGNING_KEY_CONNECT}
       NX_ADD_PLUGINS: ${NX_ADD_PLUGINS}
-      
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.postiz.rule=Host(`${HOST_URL}`)"
@@ -108,6 +109,8 @@ services:
  
   postiz-postgres:
     image: postgres:17-alpine
+    env_file:
+      - .env
     container_name: postiz-postgres
     restart: always
     environment:

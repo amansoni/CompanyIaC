@@ -10,7 +10,7 @@ export default defineConfig({
     cors: true,
     strictPort: true,
     hmr: {
-      host: 'app.dev.local',
+      host: 'app.sublimecyb.org',
       port: 8000,
     },
     headers: {

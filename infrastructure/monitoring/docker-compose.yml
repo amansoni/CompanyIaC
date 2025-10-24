@@ -19,11 +19,11 @@ services:
       - proxy-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.kuma.rule=Host(`monitor.dev.local`)"
-      - "traefik.http.routers.kuma.entrypoints=web,websecure"
+      - "traefik.http.routers.kuma.rule=Host(`monitor.sublimecyb.org`)"
+      - "traefik.http.routers.kuma.entrypoints=websecure"
       - "traefik.http.routers.kuma.tls=true"
+      - "traefik.http.routers.kuma.tls.certresolver=letsencrypt"
       - "traefik.http.services.kuma.loadbalancer.server.port=3001"
-      - "traefik.docker.network=proxy-net"
 
   loki:
     image: grafana/loki:2.9.2
@@ -57,8 +57,10 @@ services:
       - grafana_data:/var/lib/grafana
     labels:
       - traefik.enable=true
-      - traefik.http.routers.grafana.rule=Host(`logs.dev.local`)
-      - traefik.http.routers.grafana.entrypoints=web
+      - traefik.http.routers.grafana.rule=Host(`logs.sublimecyb.org`)
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.tls.certresolver=letsencrypt
       - traefik.http.services.grafana.loadbalancer.server.port=3000
     networks:
       - internal-net

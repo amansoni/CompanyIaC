@@ -13,6 +13,10 @@ volumes:
 
 services:
   backend:
+    labels:
+      - "traefik.enable=false"
+    env_file:
+      - .env
     depends_on:
       configurator:
         condition: service_completed_successfully
@@ -27,6 +31,10 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
   configurator:
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=false"
     command:
     - |
       ls -1 apps > sites/apps.txt; bench set-config -g db_host $$DB_HOST; bench set-config -gp db_port $$DB_PORT; bench set-config -g redis_cache "redis://$$REDIS_CACHE"; bench set-config -g redis_queue "redis://$$REDIS_QUEUE"; bench set-config -g redis_socketio "redis://$$REDIS_QUEUE"; bench set-config -gp socketio_port $$SOCKETIO_PORT;
@@ -57,6 +65,10 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
   db:
+    labels:
+      - "traefik.enable=false"
+    env_file:
+      - .env
     command:
     - --character-set-server=utf8mb4
     - --collation-server=utf8mb4_unicode_ci
@@ -65,9 +77,10 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     healthcheck:
-      test:
-      - CMD-SHELL
-      - mysqladmin ping -h localhost --password=BooksEyeInfiniteIndoorFrayn
+      test: [
+        "CMD-SHELL",
+        "mysqladmin ping -h localhost -u root -p$MYSQL_ROOT_PASSWORD"
+      ]
       interval: 1s
       retries: 20
     image: mariadb:10.6
@@ -79,6 +92,8 @@ services:
       target: /var/lib/mysql
       volume: {}
   frontend:
+    env_file:
+      - .env
     command:
     - nginx-entrypoint.sh
     depends_on:
@@ -89,7 +104,7 @@ services:
     environment:
       BACKEND: ${BACKEND}
       CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE}
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER}
+      FRAPPE_SITE_NAME_HEADER: $$host
       PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT}
       SOCKETIO: ${SOCKETIO}
       UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS}
@@ -100,7 +115,7 @@ services:
       traefik.enable: "true"
       traefik.http.routers.frontend-http.entrypoints: websecure
       traefik.http.routers.frontend-http.rule: Host(`${FRONTEND_HOST_1}`) || Host(`${FRONTEND_HOST_2}`)
-      traefik.http.routers.frontend-http.tls.certresolver: main-resolver
+      traefik.http.routers.frontend-http.tls.certresolver: letsencrypt
       traefik.http.services.frontend.loadbalancer.server.port: "8080"
     networks:
       default: null
@@ -112,6 +127,10 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
   queue-long:
+    labels:
+      - "traefik.enable=false"
+    env_file:
+      - .env
     command:
     - bench
     - worker
@@ -131,6 +150,10 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
   queue-short:
+    labels:
+      - "traefik.enable=false"
+    env_file:
+      - .env
     command:
     - bench
     - worker
@@ -150,10 +173,14 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
   redis-cache:
+    labels:
+      - "traefik.enable=false"
     image: redis:6.2-alpine
     networks:
       default: null
   redis-queue:
+    labels:
+      - "traefik.enable=false"
     image: redis:6.2-alpine
     networks:
       default: null
@@ -163,6 +190,10 @@ services:
       target: /data
       volume: {}
   scheduler:
+    labels:
+      - "traefik.enable=false"
+    env_file:
+      - .env
     command:
     - bench
     - schedule
@@ -180,6 +211,10 @@ services:
       target: /home/frappe/frappe-bench/sites
       volume: {}
   websocket:
+    env_file:
+      - .env
+    labels:
+      - "traefik.enable=false"
     command:
     - node
     - /home/frappe/frappe-bench/apps/frappe/socketio.js
