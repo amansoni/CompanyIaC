@@ -87,7 +87,12 @@ services:
       STRIPE_SIGNING_KEY: ${STRIPE_SIGNING_KEY}
       STRIPE_SIGNING_KEY_CONNECT: ${STRIPE_SIGNING_KEY_CONNECT}
       NX_ADD_PLUGINS: ${NX_ADD_PLUGINS}
- 
+      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.postiz.rule=Host(`${HOST_URL}`)"
+      - "traefik.http.routers.postiz.entrypoints=web"
+      - "traefik.http.services.postiz.loadbalancer.server.port=5000"
     volumes:
       - postiz-config:/config/
       - postiz-uploads:/uploads/

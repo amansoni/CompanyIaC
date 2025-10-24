@@ -7,13 +7,13 @@ services:
     volumes:
       - db:/var/lib/mysql:Z
     environment:
-      - MARIADB_AUTO_UPGRADE=1
-      - MARIADB_DATABASE=matomo
-      - MARIADB_DISABLE_UPGRADE_BACKUP=1
-      - MARIADB_INITDB_SKIP_TZINFO=1
+      - MARIADB_AUTO_UPGRADE=${MARIADB_AUTO_UPGRADE}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_DISABLE_UPGRADE_BACKUP=${MARIADB_DISABLE_UPGRADE_BACKUP}
+      - MARIADB_INITDB_SKIP_TZINFO=${MARIADB_INITDB_SKIP_TZINFO}
       - MARIADB_PASSWORD=${MARIADB_PASSWORD}
       - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - MARIADB_USER=matomo
+      - MARIADB_USER=${MARIADB_USER}
 
   app:
     image: matomo:fpm-alpine
@@ -25,13 +25,13 @@ services:
       # - ./logs:/var/www/html/logs:z
       - matomo:/var/www/html:z
     environment:
-      - MATOMO_DATABASE_ADAPTER=mysql
-      - MATOMO_DATABASE_DBNAME=matomo
-      - MATOMO_DATABASE_HOST=db
-      - MATOMO_DATABASE_PASSWORD=${MARIADB_PASSWORD}
-      - MATOMO_DATABASE_TABLES_PREFIX=matomo_
-      - MATOMO_DATABASE_USERNAME=matomo
-      - PHP_MEMORY_LIMIT=2048M
+      - MATOMO_DATABASE_ADAPTER=${MATOMO_DATABASE_ADAPTER}
+      - MATOMO_DATABASE_DBNAME=${MATOMO_DATABASE_DBNAME}
+      - MATOMO_DATABASE_HOST=${MATOMO_DATABASE_HOST}
+      - MATOMO_DATABASE_PASSWORD=${MATOMO_DATABASE_PASSWORD}
+      - MATOMO_DATABASE_TABLES_PREFIX=${MATOMO_DATABASE_TABLES_PREFIX}
+      - MATOMO_DATABASE_USERNAME=${MATOMO_DATABASE_USERNAME}
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT}
 
   web:
     image: nginx:alpine-slim
@@ -44,6 +44,10 @@ services:
       - ./matomo.conf:/etc/nginx/conf.d/default.conf:z,ro
     ports:
       - 8080:80
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.analytics.rule=Host(${ANALYTICS_HOST})
+      - traefik.http.routers.analytics.entrypoints=web
 
 volumes:
   db:
