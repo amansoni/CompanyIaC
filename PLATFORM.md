@@ -55,8 +55,8 @@ This stack uses Grafana Loki Alloy for log collection and Grafana for visualizat
          - /var/lib/docker/containers:/var/lib/docker/containers:ro
          - /var/run/docker.sock:/var/run/docker.sock:ro
       networks:
-         - galea_net
-         - galea_proxy
+         - internal-net
+         - proxy-net
 
    loki:
       image: grafana/loki:2.9.2
@@ -66,8 +66,8 @@ This stack uses Grafana Loki Alloy for log collection and Grafana for visualizat
       volumes:
          - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml:ro
       networks:
-         - galea_net
-         - galea_proxy
+         - internal-net
+         - proxy-net
 
    grafana:
       image: grafana/grafana:10.2.2
@@ -76,8 +76,8 @@ This stack uses Grafana Loki Alloy for log collection and Grafana for visualizat
       environment:
          - GF_SECURITY_ADMIN_PASSWORD=admin
       networks:
-         - galea_net
-         - galea_proxy
+         - internal-net
+         - proxy-net
 ```
 
 ### Example Alloy Config (`monitoring/alloy-config.yml`)
@@ -132,14 +132,14 @@ receivers:
 - **API:** FastAPI backend, routed at http://api.dev.local/
 - **Auth:** Keycloak at http://auth.dev.local/
 - **Monitoring:** Grafana at http://logs.dev.local/
-- **Networks:** Uses external Docker networks (`galea_proxy`, `galea_net`) for service discovery
+- **Networks:** Uses external Docker networks (`proxy-net`, `internal-net`) for service discovery
 - **Volumes:** Frontend uses a named volume for `node_modules` to avoid overwriting dependencies when mounting source code
 
 ### Quick Start (Dev)
 1. Create external Docker networks (if not present):
    ```bash
-   docker network create galea_proxy
-   docker network create galea_net
+   docker network create proxy-net
+   docker network create internal-net
    ```
 2. Build and start services:
    - Main stack (API, frontend, auth, traefik):

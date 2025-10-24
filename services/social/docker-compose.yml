@@ -91,7 +91,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.postiz.rule=Host(`${HOST_URL}`)"
-      - "traefik.http.routers.postiz.entrypoints=web"
+      - "traefik.http.routers.postiz.entrypoints=web,websecure"
       - "traefik.http.services.postiz.loadbalancer.server.port=5000"
     volumes:
       - postiz-config:/config/

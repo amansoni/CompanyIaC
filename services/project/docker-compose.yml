@@ -1,28 +1,54 @@
 networks:
-  proxy-net: # Public-facing network for Traefik to connect to services
-    external: true # Docker Compose will create this
-  internal-net: # Internal private network
-    external: true
+  proxy-net:
+    external: true       # shared Traefik network
+  openproject-net:
+    driver: bridge        # isolated internal network
+
+volumes:
+  pg_data:
+  op_data:
 
 services:
   openproject:
-    image: openproject/community:13
-    container_name: galea-care-openproject-1
+    image: openproject/openproject:16.5.1
+    container_name: openproject
+    restart: unless-stopped
     environment:
-      - OPENPROJECT_SECRET_KEY_BASE=changeme
-      - OPENPROJECT_ADMIN_EMAIL=admin@project.dev.local
-      - OPENPROJECT_ADMIN_PASSWORD=admin
-      - OPENPROJECT_HTTPS=false
-    ports:
-      - "8081:8080"
+      - DATABASE_URL=postgresql://openproject:changeme@db/openproject
+      - SECRET_KEY_BASE=supersecretkey
+      - SERVER_HOSTNAME=project.dev.local
+      - OPENPROJECT_HTTPS=true
+      - OPENPROJECT_EXPERIMENTAL=true
+      - OPENPROJECT_HOST__NAME=project.dev.local
+    depends_on:
+      - db
+    volumes:
+      - op_data:/var/lib/openproject
+    networks:
+      - proxy-net
+      - openproject-net
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.openproject.rule=Host(`project.dev.local`)"
-      - "traefik.http.routers.openproject.entrypoints=web"
-      - "traefik.http.services.openproject.loadbalancer.server.port=8080"
+      - "traefik.http.routers.openproject.entrypoints=websecure"
+      - "traefik.http.routers.openproject.tls=true"
+      - "traefik.http.services.openproject.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy-net"
-    networks:
-      - proxy-net
-      - internal-net
-    restart: unless-stopped
+      # # Optional security headers
+      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Host=project.dev.local"
+      # - "traefik.http.routers.openproject.middlewares=openproject-headers@docker"
 
+  db:
+    image: postgres:16
+    container_name: openproject-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=openproject
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=openproject
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - openproject-net
