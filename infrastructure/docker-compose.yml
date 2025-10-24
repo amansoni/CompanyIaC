@@ -5,11 +5,12 @@ networks:
     external: true
 
 volumes:
+  keycloak_data:
   keycloak_db_data:
 
 services:
   reverse-proxy:
-    image: traefik:v3.0 # Upgraded to Traefik v3
+    image: traefik:v3.5 # Upgraded to Traefik v3
     # Optional: enable access logs for Traefik
     command:
       - "--entrypoints.web.address=:80"
@@ -32,17 +33,20 @@ services:
       - ./traefik:/etc/traefik:ro # Mount the whole traefik config directory
     networks:
       - proxy-net # Traefik must be on the same network as the services it manages
-      - internal-net   # Also attach to internal network for routing to all services
+      # - internal-net   # Also attach to internal network for routing to all services
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
-      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`)"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
-  # --- Your Authentication Service (Keycloak/Authentik) ---
+      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_HOST}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.docker.network=proxy-net"
+    environment:
+      - TRAEFIK_DASHBOARD_HOST=proxy.dev.local
+
+  # --- Keycloak Authentication Service ---
   auth:
-    image: quay.io/keycloak/keycloak:22.0.4 # Or the image for Authentik
-    # Use environment variables for configuration (DB connection, admin user, etc.)
+    image: quay.io/keycloak/keycloak:22.0.4 
     environment:
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
@@ -63,18 +67,22 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=Host(`${AUTH_HOST}`)"
       - "traefik.http.routers.auth.entrypoints=websecure"
-      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.routers.auth.tls=true"
       - "traefik.http.services.auth.loadbalancer.server.port=8080"
-      - "traefik.docker.network=galea_net"
+      - "traefik.docker.network=proxy-net"
+      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Host=auth.dev.local"
+      # - "traefik.http.routers.keycloak.middlewares=keycloak-headers@docker"
     depends_on:
       - keycloak-db
-    # volumes: # Persist Keycloak data
-    #   - keycloak_data:/opt/keycloak/data
+    volumes: # Persist Keycloak data
+      - keycloak_data:/opt/keycloak/data
 
   # --- Keycloak's Database Service ---
   keycloak-db:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
