@@ -1,55 +1,186 @@
-networks:
-  proxy-net:
-    external: true       # shared Traefik network
-  openproject-net:
-    driver: bridge        # isolated internal network
+# networks:
+#   proxy-net:
+#     external: true       # shared Traefik network
+#   openproject-net:
+#     driver: bridge        # isolated internal network
 
-volumes:
-  pg_data:
-  op_data:
+# volumes:
+#   pg_data:
+#   op_data:
+
+# services:
+#   openproject:
+#     image: openproject/openproject:16.5.1
+#     container_name: openproject
+#     restart: unless-stopped
+#     environment:
+#       - DATABASE_URL=postgresql://openproject:nths-theti-nhw2-876d@db/openproject
+#       - SECRET_KEY_BASE=supersecretkey
+#       - SERVER_HOSTNAME=project.sublimecyb.org
+#       - OPENPROJECT_HTTPS=true
+#       - OPENPROJECT_EXPERIMENTAL=true
+#       - OPENPROJECT_HOST__NAME=project.sublimecyb.org
+#     depends_on:
+#       - db
+#     volumes:
+#       - op_data:/var/lib/openproject
+#     networks:
+#       - proxy-net
+#       - openproject-net
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.http.routers.openproject.rule=Host(`project.sublimecyb.org`)"
+#       - "traefik.http.routers.openproject.entrypoints=websecure"
+#       - "traefik.http.routers.openproject.tls=true"
+#       - "traefik.http.routers.openproject.tls.certresolver=letsencrypt"
+#       - "traefik.http.services.openproject.loadbalancer.server.port=80"
+#       - "traefik.docker.network=proxy-net"
+#       # # Optional security headers
+#       - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+#       - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+#       - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Host=project.sublimecyb.org"
+#       - "traefik.http.routers.openproject.middlewares=openproject-headers@docker"
+
+#   db:
+#     image: postgres:16
+#     container_name: openproject-db
+#     restart: unless-stopped
+#     environment:
+#       - POSTGRES_USER=openproject
+#       - POSTGRES_PASSWORD=nths-theti-nhw2-876d
+#       - POSTGRES_DB=openproject
+#     volumes:
+#       - pg_data:/var/lib/postgresql/data
+#     networks:
+#       - openproject-net
+
+
+# networks:
+#   frontend:
+#   backend:
+#   proxy-net:
+#     external: true  # This is your pre-existing Traefik network
+
+# volumes:
+#   pgdata:
+#   opdata:
+
+# x-op-restart-policy: &restart_policy
+#   restart: unless-stopped
+
+# x-op-app: &app
+#   image: openproject/openproject:16.5.1
+#   <<: *restart_policy
+#   environment:
+#     OPENPROJECT_HTTPS: "true"
+#     OPENPROJECT_HOST__NAME: "project.sublimecyb.org"
+#     OPENPROJECT_CACHE__MEMCACHE__SERVER: "cache:11211"
+#     OPENPROJECT_RAILS__CACHE__STORE: "memcache"
+#     DATABASE_URL: "postgres://postgres:nths-theti-nhw2-876d@db/openproject?pool=20&encoding=unicode&reconnect=true"
+#   volumes:
+#     - "opdata:/var/openproject/assets"
+
+# services:
+#   db:
+#     image: postgres:16
+#     <<: *restart_policy
+#     volumes:
+#       - "pgdata:/var/lib/postgresql/data"
+#     environment:
+#       POSTGRES_PASSWORD: 
+#       POSTGRES_DB: openproject
+#     networks:
+#       - backend
+
+#   cache:
+#     image: memcached
+#     <<: *restart_policy
+#     networks:
+#       - backend
+
+#   web:
+#     <<: *app
+#     command: "./docker/prod/web"
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.docker.network=proxy-net"
+#       - "traefik.http.routers.openproject-web.rule=Host(`project.sublimecyb.org`)"
+#       - "traefik.http.routers.openproject-web.entrypoints=websecure"
+#       - "traefik.http.routers.openproject-web.tls.certresolver=letsencrypt"
+#     networks:
+#       - backend
+#       - proxy-net
+#     depends_on:
+#       - db
+#       - cache
+
+#   worker:
+#     <<: *app
+#     command: "./docker/prod/worker"
+#     networks:
+#       - backend
+#     depends_on:
+#       - db
+#       - cache
+
+
 
 services:
+  # OpenProject Application Service
   openproject:
     image: openproject/openproject:16.5.1
-    container_name: openproject
+    container_name: openproject_app
     restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://openproject:nths-theti-nhw2-876d@db/openproject
-      - SECRET_KEY_BASE=supersecretkey
-      - SERVER_HOSTNAME=project.sublimecyb.org
-      - OPENPROJECT_HTTPS=true
-      - OPENPROJECT_EXPERIMENTAL=true
-      - OPENPROJECT_HOST__NAME=project.sublimecyb.org
     depends_on:
-      - db
+      - postgres
+    environment:
+      # Database configuration
+      DATABASE_URL: "postgresql://openproject:A7fT2pQ9sZ4xL8wR@postgres/openproject_prod"
+      # Host configuration for Traefik
+      OPENPROJECT_HOST__NAME: "project.sublimecyb.org"
+      OPENPROJECT_HTTPS: "true" # Traefik handles SSL termination
+      SECRET_KEY_BASE: "b8f7c1e2a9d4f6e3c7a2b5d8e1f4c9a6e7b3d2c5f8a1b6c4d3e2f7a9c5b8d6"
+      # Other important variables (adjust as needed)
+      TZ: "Europe/London" # Example timezone
+      RAILS_CACHE_STORE: "redis" # Recommend setting up Redis for production, but using internal cache for this simple example
     volumes:
-      - op_data:/var/lib/openproject
+      - openproject_data:/var/openproject/assets
     networks:
-      - proxy-net
-      - openproject-net
+      - openproject_backend
+      - proxy-net # Attach to the Traefik network for routing
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.openproject.rule=Host(`project.sublimecyb.org`)"
-      - "traefik.http.routers.openproject.entrypoints=websecure"
-      - "traefik.http.routers.openproject.tls=true"
-      - "traefik.http.routers.openproject.tls.certresolver=letsencrypt"
-      - "traefik.http.services.openproject.loadbalancer.server.port=80"
-      - "traefik.docker.network=proxy-net"
-      # # Optional security headers
-      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
-      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Port=443"
-      # - "traefik.http.middlewares.openproject-headers.headers.customrequestheaders.X-Forwarded-Host=project.sublimecyb.org"
-      # - "traefik.http.routers.openproject.middlewares=openproject-headers@docker"
+      # Traefik configuration
+      traefik.enable: "true"
+      # Router definition
+      traefik.http.routers.openproject.rule: "Host(`project.sublimecyb.org`)"
+      traefik.http.routers.openproject.entrypoints: "websecure" # Assuming Traefik uses 'websecure' for HTTPS
+      # Use an existing certificate resolver defined in Traefik (e.g., 'le' for Let's Encrypt)
+      traefik.http.routers.openproject.tls: "true"
+      traefik.http.routers.openproject.tls.certresolver: "letsencrypt" 
+      # Service definition
+      traefik.http.services.openproject.loadbalancer.server.port: "80" # OpenProject container listens on port 80
 
-  db:
+  # PostgreSQL Database Service
+  postgres:
     image: postgres:16
-    container_name: openproject-db
+    container_name: openproject_postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=openproject
-      - POSTGRES_PASSWORD=nths-theti-nhw2-876d
-      - POSTGRES_DB=openproject
+      POSTGRES_USER: openproject
+      POSTGRES_PASSWORD: "A7fT2pQ9sZ4xL8wR" # Random, HTTP-compliant password
+      POSTGRES_DB: openproject_prod
+      POSTGRES_CONFIG_transaction_timeout: 5min
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - openproject_db:/var/lib/postgresql/data
     networks:
-      - openproject-net
+      - openproject_backend
+
+volumes:
+  openproject_data:
+  openproject_db:
+
+networks:
+  openproject_backend: # Internal network for OpenProject and Database
+    driver: bridge
+  proxy-net: # External network for Traefik access
+    external: true

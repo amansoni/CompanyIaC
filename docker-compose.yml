@@ -1,14 +1,14 @@
 version: '3.8'
 services:
-  # Core infrastructure
-  db:
+  # Infrastructure
+  reverse-proxy:
     extends:
-      file: ./core-infra/docker-compose.yml
-      service: db
-  proxy:
+      file: ./infrastructure/docker-compose.yml
+      service: reverse-proxy
+  auth:
     extends:
-      file: ./core-infra/docker-compose.yml
-      service: proxy
+      file: ./infrastructure/docker-compose.yml
+      service: auth
   # Services
   erpnext:
     extends:

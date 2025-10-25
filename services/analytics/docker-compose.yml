@@ -70,6 +70,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.analytics.rule=Host(`${ANALYTICS_HOST}`)
-      # - traefik.http.routers.analytics.tls=true
-      - traefik.http.routers.analytics.entrypoints=web
+      - traefik.http.routers.analytics.tls=true
+      - traefik.http.routers.analytics.entrypoints=websecure
+      - traefik.http.routers.analytics.tls.certresolver=letsencrypt
       - traefik.http.services.analytics.loadbalancer.server.port=80

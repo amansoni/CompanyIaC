@@ -34,3 +34,30 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
 
+http:
+  middlewares:
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    remove-www:
+      redirectRegex:
+        regex: ^https?://www\.(.*)
+        replacement: https://${1}
+        permanent: true
+  routers:
+    http-to-https:
+      entryPoints:
+        - web
+      rule: "HostRegexp(`{host:.+}`)"
+      middlewares:
+        - redirect-to-https
+      service: noop@internal
+    remove-www:
+      entryPoints:
+        - websecure
+      rule: "HostRegexp(`www.{host:.+}`)"
+      middlewares:
+        - remove-www
+      service: noop@internal
+
