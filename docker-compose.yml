@@ -1,44 +1,45 @@
-# TODO:// this does not work as intended - may need to use scripts instead for docker control.
-services:
-  # Infrastructure
-  reverse-proxy:
-    extends:
-      env_file:
-        - ./infrastructure/.env
-      file: ./infrastructure/docker-compose.yml
-      service: reverse-proxy
-  auth:
-    extends:
-      file: ./infrastructure/docker-compose.yml
-      service: auth
-      # TODO:// Check if these work
-      # labels:
-      #   - "traefik.http.middlewares.http-to-https.redirectscheme.scheme=https"
-      #   - "traefik.http.middlewares.redirect-to-https.redirectregex.regex=^http://(.*)"
-      #   - "traefik.http.middlewares.redirect-to-https.redirectregex.replacement=https://$${1}"
-      #   - "traefik.enable=true"
-  # Services
-  erp:
-    extends:
-      file: ./services/erp/docker-compose.yml
-      service: erp
-  storage:
-    extends:
-      file: ./services/storage/docker-compose.yml
-      service: nextcloud
-  openproject:
-    extends:
-      file: ./services/openproject/docker-compose.yml
-      service: openproject
-  # Products
-  egrist:
-    extends:
-      file: ./products/egrist/docker-compose.yml
-      service: egrist
-  galea:
-    extends:
-      file: ./products/galea/docker-compose.yml
-      service: galea
-networks:
-  proxy-net:
-    external: true
+version: "3"
+# # TODO:// this does not work as intended - may need to use scripts instead for docker control.
+# services:
+#   # Infrastructure
+#   reverse-proxy:
+#     extends:
+#       env_file:
+#         - ./infrastructure/.env
+#       file: ./infrastructure/docker-compose.yml
+#       service: reverse-proxy
+#   auth:
+#     extends:
+#       file: ./infrastructure/docker-compose.yml
+#       service: auth
+#       # TODO:// Check if these work
+#       # labels:
+#       #   - "traefik.http.middlewares.http-to-https.redirectscheme.scheme=https"
+#       #   - "traefik.http.middlewares.redirect-to-https.redirectregex.regex=^http://(.*)"
+#       #   - "traefik.http.middlewares.redirect-to-https.redirectregex.replacement=https://$${1}"
+#       #   - "traefik.enable=true"
+#   # Services
+#   erp:
+#     extends:
+#       file: ./services/erp/docker-compose.yml
+#       service: erp
+#   storage:
+#     extends:
+#       file: ./services/storage/docker-compose.yml
+#       service: nextcloud
+#   openproject:
+#     extends:
+#       file: ./services/openproject/docker-compose.yml
+#       service: openproject
+#   # Products
+#   egrist:
+#     extends:
+#       file: ./products/egrist/docker-compose.yml
+#       service: egrist
+#   galea:
+#     extends:
+#       file: ./products/galea/docker-compose.yml
+#       service: galea
+# networks:
+#   proxy-net:
+#     external: true

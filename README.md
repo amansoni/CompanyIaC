@@ -1,46 +1,64 @@
 # Xperfecta Infrastructure-as-Code (IaC) Project
 
-This project provides a modular, scalable infrastructure using Docker Compose. It manages core infrastructure, third-party services, and custom products.
+An Infrastructure as Code (IaC) project using Docker Compose can provide a modular, scalable infrastructure combining networking, monitoring, automation, document storage, project management, ERP, analytics, and posting tools.
 
-## Structure
-| Name           | Description                                         |
-|----------------|-----------------------------------------------------|
-| `infrastructure` | Core infrastructure: networking, proxy, monitoring, authentication, database, and network configuration |
-| `services`       | Third-party and custom service containers (frontend, API, ERP, file sharing, project management) |
-| `products`       | Internal products and platforms (egrist, galea)    |
-| `scripts`        | Automation scripts for setup, backup, restore, migration, health checks, and deployment |
-| `docs`           | Project documentation and architecture diagrams    |
-| `.env.example`   | Example environment variable file                  |
-| `docker-compose.yml` | Main Docker Compose configuration file         |
-| `Makefile`       | Build, test, and deployment targets                |
+### Primary Components and Their Roles
 
+- **Traefik**: Dynamic reverse proxy, handles routing, SSL certificates, and load balancing for the entire stack.
+- **Keycloak**: Provides Single Sign-On (SSO), central identity management, and secure authentication flows.
+- **Grafana Loki & Alloy**: Aggregates logs for analysis and troubleshooting. Alloy acts as a unified telemetry agent, collecting logs and metrics from all containers and forwarding them to Loki and Grafana for centralized visualization.
+- **Uptime Kuma**: Monitors uptime and availability, sending real-time alerts if services go down.
 
-- **infrastructure**: Networking, proxy, monitoring  
-   - `nginx`: Reverse proxy configuration  
-   - `traefik`: Dynamic routing and SSL termination  
-   - `monitoring`: Alloy config, Grafana, Loki for logs/metrics  
-   - `auth`: Keycloak/Authentik for authentication  
-   - `database`: PostgreSQL for persistent storage  
-   - `network`: Custom Docker networks  
-- **services**: Third-party apps (erpnext, nextcloud, openproject)
-   - `frontend`: React + Vite PWA, served via Nginx  
-   - `api`: FastAPI backend with JWT auth and RBAC  
-   - `erpnext`: ERP system  
-   - `nextcloud`: File sharing and collaboration  
-   - `openproject`: Project management platform  
-- **products**: Internal products  
-   - `egrist`: Mental health assessment platform  
-   - `galea`: AI-powered care management  
-- **scripts**: Automation and environment setup
-   - `setup.sh`: Environment setup and initialization  
-   - `backup.sh`: Automated backup for databases and volumes  
-   - `restore.sh`: Restore backups to target services  
-   - `migrate.sh`: Database migration and schema updates  
-   - `healthcheck.sh`: Service health monitoring  
-   - `deploy.sh`: Automated deployment workflow  
-- **docs**: Documentation and diagrams
+### Additional Services
 
-## Usage
-1. Copy `.env.example` to `.env` and set variables.
-2. Run `make up` to start all stacks.
-3. See module READMEs for details.
+- **Nextcloud**: Secure file storage, sharing, collaboration, and productivity features with a plugin ecosystem.
+- **n8n**: Low-code workflow automation and integrations between apps and services.
+- **OpenProject**: Comprehensive project management with Gantt charts, time tracking, and agile support.
+- **ERPNext**: Full-featured ERP system supporting HR, CRM, accounting, inventory, manufacturing, and more.
+- **Matomo**: Self-hosted web analytics platform, private and GDPR-compliant alternative to Google Analytics.
+- **Postiz**: Social posting and scheduling platform for marketing and communications teams.
+
+***
+
+### Key Features
+
+- Automated deployments and updates for all services.
+- Centralized authentication and access control.
+- Unified logging, metrics, and monitoring.
+- Real-time uptime and status alerts.
+- Highly extensible, open-source tools.
+
+***
+
+### Benefits
+
+- Rapid and reproducible deployments.
+- Easier scaling, backup, and disaster recovery.
+- Centralized visibility and faster troubleshooting.
+- Reduced vendor lock-in and privacy risk.
+- Easy integration and automation between business tools.
+
+***
+
+### Common Usage Scenarios
+
+- Internal and external teams use single sign-on and shared file access.
+- Developers and IT monitor service health and log data.
+- Project and business units manage tasks and operations.
+- Marketing teams analyze web traffic and schedule campaigns.
+- All services are secured, monitored, and accessed from one stack.
+
+***
+
+This approach creates a full-featured, self-hosted, and highly maintainable infrastructure for modern organizations.
+
+[1](https://grafana.com/docs/learning-journeys/send-traces-alloy/value-of-traces-and-alloy/)
+[2](https://betterstack.com/community/comparisons/traefik-monitoring-tools/)
+[3](https://devopscube.com/grafana-loki-architecture/)
+[4](https://www.reddit.com/r/Traefik/comments/1dsuzz9/monitor_traefik_with_grafana_prometheus_loki/)
+[5](https://cloudpap.com/blog/uptime-kuma-and-grafana/)
+[6](https://www.youtube.com/watch?v=E654LPrkCjo)
+[7](https://grafana.com/docs/enterprise-logs/latest/send-data/alloy/)
+[8](https://www.paulsblog.dev/use-docker-uptime-kuma-and-traefik-to-monitor-your-website/)
+[9](https://github.com/vtatarin/lgtm)
+[10](https://www.reddit.com/r/devops/comments/129vxcz/what_are_you_favorite_dashboard_tools_stack_and/)
