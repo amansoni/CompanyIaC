@@ -5,72 +5,92 @@ networks:
     external: false
     name: analytics-net
 
-volumes:
-  db:
-  matomo:
-
 services:
   db:
-    env_file:
-      - .env
-    image: mariadb:lts
-    command: --max-allowed-packet=64MB
-    restart: always
+    image: mariadb:10
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+      - "--max_allowed_packet=256M"
     networks:
       - default
     volumes:
-      - db:/var/lib/mysql:Z
+      - "db:/var/lib/mysql"
     environment:
-      - MARIADB_AUTO_UPGRADE=${MARIADB_AUTO_UPGRADE}
-      - MARIADB_DATABASE=${MARIADB_DATABASE}
-      - MARIADB_DISABLE_UPGRADE_BACKUP=${MARIADB_DISABLE_UPGRADE_BACKUP}
-      - MARIADB_INITDB_SKIP_TZINFO=${MARIADB_INITDB_SKIP_TZINFO}
-      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
-      - MARIADB_USER=${MARIADB_USER}
-
-  app:
-    env_file:
-      - .env
-    image: matomo:fpm-alpine
+      - "TZ"
+      - "MARIADB_RANDOM_ROOT_PASSWORD=yes"
+      - "MYSQL_DATABASE"
+      - "MYSQL_USER"
+      - "MYSQL_PASSWORD"
     restart: always
-    networks:
-      - default
+
+  redis:
+    image: redis:4.0-alpine
+    restart: always
+
+  # msmtpd:
+  #   image: crazymax/msmtpd:latest
+  #   env_file:
+  #     - "./msmtpd.env"
+  #   environment:
+  #     - "TZ"
+  #   restart: always
+
+  # geoip-updater:
+  #   image: crazymax/geoip-updater:latest
+  #   volumes:
+  #     - "geoip-updater:/data"
+  #   env_file:
+  #     - "./geoip-updater.env"
+  #   environment:
+  #     - "TZ"
+  #   restart: always
+
+  matomo:
+    image: matomo:apache
     depends_on:
       - db
-    volumes:
-      # - ./config:/var/www/html/config:z
-      # - ./logs:/var/www/html/logs:z
-      - matomo:/var/www/html:z
-    environment:
-      - MATOMO_DATABASE_ADAPTER=${MATOMO_DATABASE_ADAPTER}
-      - MATOMO_DATABASE_DBNAME=${MATOMO_DATABASE_DBNAME}
-      - MATOMO_DATABASE_HOST=${MATOMO_DATABASE_HOST}
-      - MATOMO_DATABASE_PASSWORD=${MATOMO_DATABASE_PASSWORD}
-      - MATOMO_DATABASE_TABLES_PREFIX=${MATOMO_DATABASE_TABLES_PREFIX}
-      - MATOMO_DATABASE_USERNAME=${MATOMO_DATABASE_USERNAME}
-      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT}
-
-  web:
-    image: nginx:alpine-slim
-    env_file:
-      - .env
-    restart: always
+      - redis
+      # - msmtpd
     networks:
-      - default
       - proxy-net
-    depends_on:
-      - app
+      - default
     volumes:
-      - matomo:/var/www/html:z,ro
-      # see https://github.com/matomo-org/matomo-nginx
-      - ./matomo.conf:/etc/nginx/conf.d/default.conf:z,ro
-    # ports:
-    #   - 8080:80
+      - "matomo:/data"
+      # - "geoip-updater:/data/geoip"
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.analytics.rule=Host(`${ANALYTICS_HOST}`)
-      - traefik.http.routers.analytics.tls=true
-      - traefik.http.routers.analytics.entrypoints=websecure
-      - traefik.http.routers.analytics.tls.certresolver=letsencrypt
-      - traefik.http.services.analytics.loadbalancer.server.port=80
+      - "traefik.enable=true"
+      - "traefik.http.routers.matomo.entrypoints=websecure"
+      - "traefik.http.routers.matomo.rule=Host(`analytics.sublimecyb.org`)"
+      - "traefik.http.routers.matomo.tls=true"
+      - "traefik.http.routers.matomo.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.matomo.tls.domains[0].main=analytics.sublimecyb.org"
+      - "traefik.http.services.matomo.loadbalancer.server.port=80"
+    env_file:
+      - "./matomo.env"
+    environment:
+      - "TZ"
+    restart: always
+
+  # cron:
+  #   image: crazymax/matomo:latest
+  #   depends_on:
+  #     - matomo
+  #   volumes:
+  #     - "matomo:/data"
+  #     # - "geoip-updater:/data/geoip"
+  #   env_file:
+  #     - "./matomo.env"
+  #   environment:
+  #     - "TZ"
+  #     - "SIDECAR_CRON=1"
+  #     - "CRON_ARCHIVE=0 * * * *"
+  #     - "ARCHIVE_OPTIONS=--concurrent-requests-per-website=3"
+  #   healthcheck:
+  #     disable: true
+  #   restart: always
+
+volumes:
+  db:
+  # geoip-updater:
+  matomo:
