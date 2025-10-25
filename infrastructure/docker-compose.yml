@@ -10,6 +10,7 @@ volumes:
 
 services:
   reverse-proxy:
+    container_name: reverse-proxy
     env_file:
       - .env
     image: traefik:v3.5 # Upgraded to Traefik v3
@@ -46,6 +47,8 @@ services:
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
         # Restrict dashboard access in production (see Traefik docs for auth middleware)
+      - "traefik.http.middlewares.http-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.traefik.middlewares=http-to-https,redirect-to-https"
       # Global HTTP to HTTPS redirect
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.routers.http-catchall.rule=HostRegexp(`{any:.+}`)"
@@ -56,6 +59,7 @@ services:
 
   # --- Keycloak Authentication Service ---
   auth:
+    container_name: auth
     image: quay.io/keycloak/keycloak:22.0.4
     env_file:
       - .env
@@ -82,10 +86,10 @@ services:
       - "traefik.http.routers.auth.tls=true"
       - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
       - "traefik.http.services.auth.loadbalancer.server.port=8080" # Set to actual Keycloak port if different
-      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
-      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Port=443"
-      # - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Host=auth.sublimecyb.org"
-      # - "traefik.http.routers.keycloak.middlewares=keycloak-headers@docker"
+      - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+      - "traefik.http.middlewares.keycloak-headers.headers.customrequestheaders.X-Forwarded-Host=auth.sublimecyb.org"
+      - "traefik.http.routers.auth.middlewares=keycloak-headers@docker"
     depends_on:
       - keycloak-db
     volumes: # Persist Keycloak data

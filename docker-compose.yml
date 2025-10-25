@@ -1,22 +1,30 @@
-version: '3.8'
+# TODO:// this does not work as intended - may need to use scripts instead for docker control.
 services:
   # Infrastructure
   reverse-proxy:
     extends:
+      env_file:
+        - ./infrastructure/.env
       file: ./infrastructure/docker-compose.yml
       service: reverse-proxy
   auth:
     extends:
       file: ./infrastructure/docker-compose.yml
       service: auth
+      # TODO:// Check if these work
+      # labels:
+      #   - "traefik.http.middlewares.http-to-https.redirectscheme.scheme=https"
+      #   - "traefik.http.middlewares.redirect-to-https.redirectregex.regex=^http://(.*)"
+      #   - "traefik.http.middlewares.redirect-to-https.redirectregex.replacement=https://$${1}"
+      #   - "traefik.enable=true"
   # Services
-  erpnext:
+  erp:
     extends:
-      file: ./services/erpnext/docker-compose.yml
-      service: erpnext
-  nextcloud:
+      file: ./services/erp/docker-compose.yml
+      service: erp
+  storage:
     extends:
-      file: ./services/nextcloud/docker-compose.yml
+      file: ./services/storage/docker-compose.yml
       service: nextcloud
   openproject:
     extends:
