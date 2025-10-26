@@ -3,17 +3,18 @@
 An Infrastructure as Code (IaC) project using Docker Compose can provide a modular, scalable infrastructure combining networking, monitoring, automation, document storage, project management, ERP, analytics, and posting tools.
 
 ## Service Endpoints
-
-- [Analytics](https://analytics.sublimecyb.org)
-- [Keycloak SSO](https://auth.sublimecyb.org)
-- [Ollama WebUi](https://chat.sublimecyb.org)
-- [Nextcloud](https://docs.sublimecyb.org)
-- [ERP](https://erp.sublimecyb.org)
-- [Monitor](https://monitor.sublimecyb.org)
-- [Portainer](https://portainer.sublimecyb.org)
-- [Project](https://project.sublimecyb.org)
-- [Social](https://social.sublimecyb.org)
-- [Proxy](https://traefik.sublimecyb.org)
+| Service        | URL                                      | Description                                                                                  |
+|----------------|------------------------------------------|----------------------------------------------------------------------------------------------|
+| Analytics      | [https://analytics.sublimecyb.org](https://analytics.sublimecyb.org)   | Matomo web analytics platform for privacy-focused traffic analysis.                          |
+| Keycloak SSO   | [https://auth.sublimecyb.org](https://auth.sublimecyb.org)             | Centralized identity management and Single Sign-On (SSO) via Keycloak.                       |
+| Ollama WebUi   | [https://chat.sublimecyb.org](https://chat.sublimecyb.org)             | Web-based interface for AI chat and LLM interactions.                                        |
+| Nextcloud      | [https://docs.sublimecyb.org](https://docs.sublimecyb.org)             | Secure file storage, sharing, and collaboration platform.                                    |
+| ERP            | [https://erp.sublimecyb.org](https://erp.sublimecyb.org)               | ERPNext system for business operations, HR, CRM, and accounting.                             |
+| Monitor        | [https://monitor.sublimecyb.org](https://monitor.sublimecyb.org)        | Uptime Kuma dashboard for service monitoring and alerts.                                     |
+| Portainer      | [https://portainer.sublimecyb.org](https://portainer.sublimecyb.org)    | Container management and orchestration UI.                                                   |
+| Project        | [https://project.sublimecyb.org](https://project.sublimecyb.org)        | OpenProject for project management, Gantt charts, and agile workflows.                       |
+| Social         | [https://social.sublimecyb.org](https://social.sublimecyb.org)          | Postiz platform for social posting and campaign scheduling.                                  |
+| Proxy          | [https://traefik.sublimecyb.org](https://traefik.sublimecyb.org)        | Traefik dashboard for reverse proxy, routing, and SSL management.                            |
 
 
 ### Primary Components and Their Roles
