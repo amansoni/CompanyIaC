@@ -21,7 +21,7 @@ frontend/.vite/
 .vscode/
 
 # Traefik
-traefik/certs/
+infrastructure/traefik/certs/
 
 # Database
 services/**/db_data/

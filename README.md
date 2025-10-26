@@ -2,6 +2,20 @@
 
 An Infrastructure as Code (IaC) project using Docker Compose can provide a modular, scalable infrastructure combining networking, monitoring, automation, document storage, project management, ERP, analytics, and posting tools.
 
+## Service Endpoints
+
+- [Analytics](https://analytics.sublimecyb.org)
+- [Auth](https://auth.sublimecyb.org)
+- [Chat](https://chat.sublimecyb.org)
+- [Docs](https://docs.sublimecyb.org)
+- [ERP](https://erp.sublimecyb.org)
+- [Monitor](https://monitor.sublimecyb.org)
+- [Portainer](https://portainer.sublimecyb.org)
+- [Project](https://project.sublimecyb.org)
+- [Social](https://social.sublimecyb.org)
+- [Traefik](https://traefik.sublimecyb.org)
+
+
 ### Primary Components and Their Roles
 
 - **Traefik**: Dynamic reverse proxy, handles routing, SSL certificates, and load balancing for the entire stack.

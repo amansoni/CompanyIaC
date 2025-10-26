@@ -5,6 +5,7 @@ networks:
     external: false
     name: analytics-net
 
+# https://mariushosting.com/how-to-install-matomo-on-your-synology-nas/
 services:
   db:
     image: mariadb:10
@@ -66,10 +67,16 @@ services:
       - "traefik.http.routers.matomo.tls.certresolver=letsencrypt"
       - "traefik.http.routers.matomo.tls.domains[0].main=analytics.sublimecyb.org"
       - "traefik.http.services.matomo.loadbalancer.server.port=80"
-    env_file:
-      - "./matomo.env"
     environment:
-      - "TZ"
+      - "MATOMO_DATABASE_HOST=db"
+      - "MATOMO_DATABASE_ADAPTER=mysql"
+      - "MATOMO_DATABASE_TABLES_PREFIX=matomo_"
+      - "MATOMO_DATABASE_USERNAME=${MYSQL_USER}"
+      - "MATOMO_DATABASE_PASSWORD=${MYSQL_PASSWORD}"
+      - "MATOMO_DATABASE_DBNAME=${MYSQL_DATABASE}"
+      - "MATOMO_TRUSTED_HOSTS=analytics.sublimecyb.org"
+      - "MATOMO_GENERAL_ALLOW_UPGRADE_AND_MIGRATION=1"
+      - "TZ=Europe/London"
     restart: always
 
   # cron:
@@ -94,3 +101,6 @@ volumes:
   db:
   # geoip-updater:
   matomo:
+
+
+

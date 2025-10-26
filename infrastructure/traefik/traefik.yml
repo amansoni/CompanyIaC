@@ -4,7 +4,7 @@ global:
   sendAnonymousUsage: false
 
 log:
-  level: DEBUG # Increased log level for maximum verbosity
+  level: INFO # Increased log level for maximum verbosity
   format: common
 
 api:
