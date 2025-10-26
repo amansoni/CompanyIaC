@@ -5,15 +5,15 @@ An Infrastructure as Code (IaC) project using Docker Compose can provide a modul
 ## Service Endpoints
 
 - [Analytics](https://analytics.sublimecyb.org)
-- [Auth](https://auth.sublimecyb.org)
-- [Chat](https://chat.sublimecyb.org)
-- [Docs](https://docs.sublimecyb.org)
+- [Keycloak SSO](https://auth.sublimecyb.org)
+- [Ollama WebUi](https://chat.sublimecyb.org)
+- [Nextcloud](https://docs.sublimecyb.org)
 - [ERP](https://erp.sublimecyb.org)
 - [Monitor](https://monitor.sublimecyb.org)
 - [Portainer](https://portainer.sublimecyb.org)
 - [Project](https://project.sublimecyb.org)
 - [Social](https://social.sublimecyb.org)
-- [Traefik](https://traefik.sublimecyb.org)
+- [Proxy](https://traefik.sublimecyb.org)
 
 
 ### Primary Components and Their Roles
