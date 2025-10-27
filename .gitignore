@@ -21,7 +21,8 @@ frontend/.vite/
 .vscode/
 
 # Traefik
-infrastructure/traefik/certs/
+infrastructure/traefik/certs/*
+!infrastructure/traefik/certs/acme.json
 
 # Database
 services/**/db_data/
